@@ -1,7 +1,4 @@
-use std::{
-    ops::{Deref, DerefMut},
-    ptr::NonNull,
-};
+use std::{ops::Deref, ptr::NonNull};
 
 use leveldb_sys::*;
 

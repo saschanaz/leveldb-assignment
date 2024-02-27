@@ -1,4 +1,7 @@
-mod db_handle;
-pub use db_handle::LevelDBHandle;
+mod handle;
+pub use handle::LevelDBHandle;
 
-mod db_options;
+mod options;
+mod read_options;
+mod write_options;
+mod value;

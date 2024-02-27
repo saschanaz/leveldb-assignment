@@ -9,3 +9,6 @@ edition = "2021"
 anyhow = "1.0.80"
 leveldb-sys = "2.0.9"
 thiserror = "1.0.57"
+
+[dev-dependencies]
+tempdir = "0.3.7"
