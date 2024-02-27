@@ -1,13 +1,13 @@
-use std::{ops::Deref, ptr::NonNull};
+use std::{marker::PhantomData, ops::Deref, ptr::NonNull};
 
 use leveldb_sys::*;
 
-use super::{read_options::LevelDBReadOptions, value::LevelDBValue, LevelDBHandle};
+use super::{read_options::LevelDBReadOptions, LevelDBHandle};
 
 pub struct LevelDBIterator<'a> {
-    db: &'a LevelDBHandle,
     iterator: NonNull<leveldb_iterator_t>,
     started: bool,
+    phantom: PhantomData<&'a LevelDBHandle>,
 }
 
 impl<'a> LevelDBIterator<'a> {
@@ -16,9 +16,9 @@ impl<'a> LevelDBIterator<'a> {
         let iterator =
             unsafe { leveldb_create_iterator(db.deref() as *const _ as *mut _, options.deref()) };
         Self {
-            db,
             iterator: NonNull::new(iterator).expect("Iterator should be non-null"),
             started: false,
+            phantom: PhantomData,
         }
     }
 }
