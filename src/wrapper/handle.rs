@@ -1,6 +1,6 @@
 use leveldb_sys::*;
 use std::ffi::CString;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 use std::ptr::{self, NonNull};
 
@@ -10,6 +10,7 @@ use super::options::LevelDBOptions;
 use super::read_options::LevelDBReadOptions;
 use super::value::LevelDBValue;
 use super::write_options::LevelDBWriteOptions;
+use super::iterator::LevelDBIterator;
 
 #[derive(Error, Debug)]
 pub enum LevelDBError {
@@ -97,14 +98,31 @@ impl LevelDBHandle {
         }
 
         let value = LevelDBValue::new(unsafe { NonNull::new_unchecked(value) }, value_len);
-
         Ok(Some(value))
+    }
+
+    pub fn iter(&self) -> LevelDBIterator {
+        LevelDBIterator::new(self)
     }
 }
 
 impl Drop for LevelDBHandle {
     fn drop(&mut self) {
         unsafe { leveldb_close(self.db_ptr.as_ptr()) };
+    }
+}
+
+impl Deref for LevelDBHandle {
+    type Target = leveldb_t;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { self.db_ptr.as_ref() }
+    }
+}
+
+impl DerefMut for LevelDBHandle {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { self.db_ptr.as_mut() }
     }
 }
 
@@ -132,6 +150,30 @@ mod tests {
             std::str::from_utf8(&*data).expect("data should be in utf8"),
             "bar"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn basic_iterator() -> Result<(), LevelDBError> {
+        let dir = TempDir::new("basic_put_get").expect("Making tempdir");
+        let handle = LevelDBHandle::open(dir.path())?;
+        handle.put("foo".as_bytes(), "bar".as_bytes())?;
+        handle.put("foo2".as_bytes(), "bar2".as_bytes())?;
+
+        let vec: Vec<&[u8]> = handle.iter().collect();
+
+        let data = vec[0];
+        assert_eq!(
+            std::str::from_utf8(&*data).expect("data should be in utf8"),
+            "bar"
+        );
+
+        let data = vec[1];
+        assert_eq!(
+            std::str::from_utf8(&*data).expect("data should be in utf8"),
+            "bar2"
+        );
+
         Ok(())
     }
 }
